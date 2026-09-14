@@ -1,0 +1,20 @@
+{
+  "storylets": [
+    {
+      "id": "a",
+      "text": "끊어진 goto와 선언되지 않은 플래그를 동시에 가진 스토리렛",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "없는 곳으로 간다",
+          "effects": [ { "flag": "오타난_플래그" } ],
+          "goto": "존재하지_않음"
+        },
+        { "id": "c2", "text": "정상", "goto": "b" }
+      ]
+    },
+    { "id": "b", "text": "끝", "ending": "TEST" },
+    { "id": "b", "text": "중복 id", "ending": "TEST" },
+    { "id": "orphan", "text": "아무도 가리키지 않고 조건도 없음", "ending": "TEST" }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "start": "prologue_01_awakening",
+  "declarations": "flags.json",
+  "files": [
+    "prologue.json",
+    "chapter1.json"
+  ]
+}

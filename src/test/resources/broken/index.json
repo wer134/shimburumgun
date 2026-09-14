@@ -1,0 +1,5 @@
+{
+  "start": "a",
+  "declarations": "flags.json",
+  "files": ["story.json"]
+}

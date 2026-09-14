@@ -36,18 +36,61 @@
 - **[GDD.md](GDD.md)** — 기획서 (개정 2판). 세계관, 수치 설계, 시뮬레이션 검증, 구현 설계
 - 1판 대비 변경점은 [부록 A](GDD.md#부록-a-1판-대비-변경점) 참고
 
-## 구현 현황
+## 실행
 
-아직 코드 없음. 기획 단계.
+Java 21 이상 필요. Gradle wrapper 대신 설치된 Gradle을 쓴다.
+
+```bash
+gradle run                       # 플레이
+gradle run --args="--validate"   # 스토리 JSON 검증만 (CI용)
+gradle run --args="--auto"       # 항상 첫 선택지를 골라 끝까지 진행 (스모크 테스트)
+gradle test                      # 단위 테스트
+```
+
+## 구조
+
+스토리 텍스트는 Java 코드에 들어가지 않는다. **JSON만 고치면 이야기가 바뀐다.**
+
+```
+src/main/java/errand/
+  engine/    Storylet, Condition, Effect, GameState, StoryEngine, StoryRepository
+  io/        ConsoleRenderer
+src/main/resources/story/
+  index.json      읽을 파일 목록과 시작 지점
+  flags.json      쓸 수 있는 플래그·카운터 선언
+  prologue.json   적패지 유래담
+  chapter1.json   아랑 설화
+```
+
+다음 장면으로 넘기는 방법이 둘이다.
+
+1. **명시 이동** — `goto`/`next`로 대상을 적는다. 선형 구간용
+2. **조건 선택** — 대상을 비워 두면 엔진이 고른다. 지금 상태에서 `requires`를 만족하고 아직 안 본 스토리렛 중 `priority`가 가장 높은 것
+
+2번 덕분에 장면을 추가할 때 기존 분기표를 건드릴 필요가 없다. Failbetter의 quality-based narrative를 축소 적용한 것이다.
+
+작성법은 **[docs/STORY_FORMAT.md](docs/STORY_FORMAT.md)** 참고.
+
+### 검증은 로딩 시점에
+
+플래그 기반 분기의 가장 큰 위험은 "3장까지 가야 드러나는 오타"다. 플레이테스트로는 못 잡는다. 그래서 게임 시작 전에 전수 검사하고 오류를 **한꺼번에** 보고한다.
+
+- 스토리렛 id 중복, 끊어진 goto
+- `flags.json`에 선언되지 않은 플래그 이름
+- 어디서도 닿을 수 없는 스토리렛
+
+## 구현 현황
 
 | 우선순위 | 항목 | 상태 |
 |---------|------|------|
-| 1 | 스토리렛 엔진 + 플래그 시스템 | 미착수 |
+| 1 | 스토리렛 엔진 + 플래그 시스템 | **완료** |
 | 2 | 혼력 경제 + 강화 시스템 | 미착수 |
-| 3 | 스토리 텍스트 (프롤로그 + 3장 + 엔딩 4종) | 미착수 |
+| 3 | 스토리 텍스트 (프롤로그 + 3장 + 엔딩 4종) | 프롤로그·1장 완료 |
 | 4 | 업경대 회상 시스템 | 미착수 |
-| 5 | 전투 시스템 | 미착수 |
+| 5 | 전투 시스템 | 미착수 (엔진에 `scene: battle` 자리만 있음) |
 | 6 | 세이브/로드 | 선택 구현 |
+
+현재 플레이 가능한 범위는 프롤로그부터 1장 전투 직전까지다.
 
 ## 밸런스 수치에 대하여
 
