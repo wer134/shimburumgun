@@ -22,6 +22,7 @@ public final class GameState {
     private int hp = HP_MAX;
     private int weapon = 0;
     private int han = 0;
+    private int charms = 0;
 
     private final Set<String> flags = new HashSet<>();
     private final Map<String, Integer> counters = new HashMap<>();
@@ -32,6 +33,7 @@ public final class GameState {
     public int hp()     { return hp; }
     public int weapon() { return weapon; }
     public int han()    { return han; }
+    public int charms() { return charms; }
 
     public int stat(Stat s) {
         return switch (s) {
@@ -40,6 +42,7 @@ public final class GameState {
             case HP     -> hp;
             case WEAPON -> weapon;
             case HAN    -> han;
+            case CHARM  -> charms;
         };
     }
 
@@ -48,6 +51,8 @@ public final class GameState {
     public void addHp(int d)     { hp = clamp(hp + d, 0, HP_MAX); }
     public void addWeapon(int d) { weapon = clamp(weapon + d, 0, WEAPON_MAX); }
     public void addHan(int d)    { han = Math.max(0, han + d); }
+    public void addCharms(int d) { charms = Math.max(0, charms + d); }
+    public void setHan(int v)    { han = Math.max(0, v); }
 
     public boolean flag(String name)          { return flags.contains(name); }
     public void setFlag(String name, boolean v) { if (v) flags.add(name); else flags.remove(name); }
@@ -70,6 +75,7 @@ public final class GameState {
     private static int clamp(int v, int lo, int hi) { return Math.max(lo, Math.min(hi, v)); }
 
     @Override public String toString() {
-        return "공덕 %d · 혼력 %d · 체력 %d · 낫 +%d · 한 %d".formatted(karma, soul, hp, weapon, han);
+        return "공덕 %d · 혼력 %d · 체력 %d · 낫 +%d · 한 %d · 부적 %d"
+                .formatted(karma, soul, hp, weapon, han, charms);
     }
 }

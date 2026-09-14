@@ -44,6 +44,7 @@ Java 21 이상 필요. Gradle wrapper 대신 설치된 Gradle을 쓴다.
 gradle run                       # 플레이
 gradle run --args="--validate"   # 스토리 JSON 검증만 (CI용)
 gradle run --args="--auto"       # 항상 첫 선택지를 골라 끝까지 진행 (스모크 테스트)
+gradle run --args="--seed=42"    # 강화 난수를 고정해 재현 가능하게
 gradle test                      # 단위 테스트
 ```
 
@@ -54,11 +55,13 @@ gradle test                      # 단위 테스트
 ```
 src/main/java/errand/
   engine/    Storylet, Condition, Effect, GameState, StoryEngine, StoryRepository
-  io/        ConsoleRenderer
+  economy/   WeaponTable, Enhancer, Shop
+  io/        ConsoleRenderer, ShopConsole
 src/main/resources/story/
   index.json      읽을 파일 목록과 시작 지점
   flags.json      쓸 수 있는 플래그·카운터 선언
   prologue.json   적패지 유래담
+  interludes.json 도깨비 상점 (scene: shop)
   chapter1.json   아랑 설화
 ```
 
@@ -84,13 +87,25 @@ src/main/resources/story/
 | 우선순위 | 항목 | 상태 |
 |---------|------|------|
 | 1 | 스토리렛 엔진 + 플래그 시스템 | **완료** |
-| 2 | 혼력 경제 + 강화 시스템 | 미착수 |
+| 2 | 혼력 경제 + 강화 시스템 | **완료** |
 | 3 | 스토리 텍스트 (프롤로그 + 3장 + 엔딩 4종) | 프롤로그·1장 완료 |
 | 4 | 업경대 회상 시스템 | 미착수 |
 | 5 | 전투 시스템 | 미착수 (엔진에 `scene: battle` 자리만 있음) |
 | 6 | 세이브/로드 | 선택 구현 |
 
-현재 플레이 가능한 범위는 프롤로그부터 1장 전투 직전까지다.
+현재 플레이 가능한 범위는 프롤로그 → 도깨비 상점 → 1장(아랑) → 상점까지다. 강화·천도·숨돌이·부적 거래가 전부 동작한다.
+
+### 밸런스는 테스트가 지킨다
+
+확률표(`WeaponTable`)를 고치면 `BalanceRegressionTest`가 깨진다. 그것이 의도다 — 이 게임에는 파밍 구간이 없어서 혼력 총량이 고정이고, 확률을 조금만 건드려도 히든 엔딩 도달 가능성이 흔들린다.
+
+```
+예산 150 → 평균 +2.54   +2 43.1%  +3 55.2%  +4  0.0%  +5  0.0%
+예산 250 → 평균 +2.96   +2 36.0%  +3 31.5%  +4 32.5%  +5  0.0%
+예산 380 → 평균 +3.24   +2 23.7%  +3 39.1%  +4 26.2%  +5 11.0%   ← 기대 예산 올인
+```
+
+기준은 "기대 예산 380을 전부 강화에 쏟았을 때 +5 도달률 5~15%". 벗어나면 히든 엔딩이 너무 흔하거나 사실상 닫힌다. 표는 `gradle test`가 매번 출력하므로 GDD에 그대로 옮기면 된다.
 
 ## 밸런스 수치에 대하여
 

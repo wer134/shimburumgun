@@ -49,7 +49,7 @@
           "id": "accept",
           "text": "낫을 받는다.",
           "effects": [ { "soul": 50 } ],
-          "goto": "ch1_01_bamboo"
+          "goto": "interlude_1_dokkaebi"
         },
         {
           "id": "ask_why_me",
@@ -72,7 +72,7 @@
           "id": "accept_late",
           "text": "낫을 받는다.",
           "effects": [ { "soul": 50 } ],
-          "goto": "ch1_01_bamboo"
+          "goto": "interlude_1_dokkaebi"
         }
       ]
     }

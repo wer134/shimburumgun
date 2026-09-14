@@ -10,6 +10,7 @@ package errand.engine;
  *   {"hp": -12}                         체력 -12
  *   {"weapon": 1}                       낫 단계 +1
  *   {"han": 1}                          한 +1
+ *   {"charm": 1}                        부적 조각 +1
  *   {"flag": "이름"}                     플래그 세움
  *   {"flag": "이름", "set": false}       플래그 내림
  *   {"counter": "이름", "add": 1}        카운터 증가
@@ -29,6 +30,7 @@ public sealed interface Effect {
                 case HP     -> s.addHp(delta);
                 case WEAPON -> s.addWeapon(delta);
                 case HAN    -> s.addHan(delta);
+                case CHARM  -> s.addCharms(delta);
             }
         }
         @Override public String describe() {

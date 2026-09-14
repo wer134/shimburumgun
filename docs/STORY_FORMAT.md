@@ -43,7 +43,7 @@ gradle run --args="--validate"
 | `text` | | 문자열 또는 문자열 배열. 배열의 각 항목이 한 문단 |
 | `speaker` | | 화자 이름. 없으면 지문으로 출력 |
 | `chapter` | | 소속 장. 0은 프롤로그/막간 |
-| `scene` | | `narrative`(기본) / `battle` / `shop` |
+| `scene` | | `narrative`(기본) / `battle` / `shop` — `shop`이면 텍스트 출력 후 도깨비 상점이 열린다 |
 | `requires` | | 등장 조건. 없으면 항상 등장 가능 |
 | `priority` | | 조건 선택에서 경합할 때 큰 값이 이김. 기본 0 |
 | `once` | | `false`면 여러 번 등장 가능. 기본 `true` |
@@ -97,7 +97,7 @@ gradle run --args="--validate"
 { "any": [ ... ] }                             하나라도 참
 ```
 
-- 스탯: `karma` 공덕 / `soul` 혼력 / `hp` 체력 / `weapon` 낫 단계 / `han` 한
+- 스탯: `karma` 공덕 / `soul` 혼력 / `hp` 체력 / `weapon` 낫 단계 / `han` 한 / `charm` 부적 조각
 - 비교: `eq` `ne` `gt` `gte` `lt` `lte` — 하나만 쓸 것
 
 히든 엔딩 조건(GDD 9장)을 그대로 옮기면 이렇게 된다.
@@ -120,6 +120,7 @@ gradle run --args="--validate"
   { "hp": -12 },
   { "weapon": 1 },
   { "han": 1 },
+  { "charm": 1 },                              부적 조각 +1
   { "flag": "원혼_소원_들어줌" },                플래그 세움
   { "flag": "시험_거짓말", "set": false },       플래그 내림
   { "counter": "천도_횟수", "add": 1 }
@@ -127,6 +128,24 @@ gradle run --args="--validate"
 ```
 
 수치는 자동으로 범위에 맞게 잘린다(공덕 0~100, 체력 0~100, 낫 +0~+5). 크게 적어도 게임이 깨지지 않는다.
+
+---
+
+## 상점 막간
+
+`scene`을 `shop`으로 두면 텍스트를 출력한 뒤 도깨비 상점이 열린다. 플레이어가 떠나면 `next`로 진행한다.
+
+```json
+{
+  "id": "interlude_2_dokkaebi",
+  "scene": "shop",
+  "speaker": "도깨비",
+  "text": ["대숲을 나오자 같은 불빛이 또 있다."],
+  "next": "ch2_01_charcoal"
+}
+```
+
+진열 품목과 가격은 JSON이 아니라 `errand.economy.Shop`에 있다. 천도는 **막간 1회당 2번**으로 제한되며, 이 제한은 상점 스토리렛을 지날 때마다 새로 채워진다.
 
 ---
 

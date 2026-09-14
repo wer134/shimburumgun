@@ -26,5 +26,8 @@ tasks.withType<JavaCompile> { options.encoding = "UTF-8" }
 
 tasks.test {
     useJUnitPlatform()
-    testLogging { events("passed", "failed", "skipped") }
+    testLogging {
+        events("passed", "failed", "skipped")
+        showStandardStreams = true
+    }
 }

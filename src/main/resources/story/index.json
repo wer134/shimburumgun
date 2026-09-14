@@ -3,6 +3,7 @@
   "declarations": "flags.json",
   "files": [
     "prologue.json",
+    "interludes.json",
     "chapter1.json"
   ]
 }
