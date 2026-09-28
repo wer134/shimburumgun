@@ -34,19 +34,31 @@
 ## 문서
 
 - **[GDD.md](GDD.md)** — 기획서 (개정 2판). 세계관, 수치 설계, 시뮬레이션 검증, 구현 설계
+- **[docs/TESTING.md](docs/TESTING.md)** — 실행 방법, 봐 줄 지점, 테스트용 상태 지정
+- **[docs/STORY_FORMAT.md](docs/STORY_FORMAT.md)** — 스토리 JSON 작성법 (코드 안 봐도 됨)
 - 1판 대비 변경점은 [부록 A](GDD.md#부록-a-1판-대비-변경점) 참고
 
 ## 실행
 
-Java 21 이상 필요. Gradle wrapper 대신 설치된 Gradle을 쓴다.
+**Java 21 이상만 있으면 된다.** Gradle은 설치할 필요 없다 — wrapper가 들어 있다.
 
 ```bash
-gradle run                       # 플레이
-gradle run --args="--validate"   # 스토리 JSON 검증만 (CI용)
-gradle run --args="--auto"       # 항상 첫 선택지를 골라 끝까지 진행 (스모크 테스트)
-gradle run --args="--seed=42"    # 강화 난수를 고정해 재현 가능하게
-gradle test                      # 단위 테스트
+./gradlew run              # 플레이
+./gradlew validateStory    # 스토리 JSON만 검증 (2초)
+./gradlew smoke            # 자동으로 끝까지 진행, 막히는 곳 확인
+./gradlew test             # 단위 테스트 60개
+./gradlew check            # 위 셋 전부
 ```
+
+Windows는 `gradlew.bat run`.
+
+특정 장면만 보려면 초기 상태를 지정할 수 있다.
+
+```bash
+./gradlew run --args="--weapon=4 --soul=300 --karma=80 --seed=42"
+```
+
+자세한 테스트 방법과 봐 줄 지점은 **[docs/TESTING.md](docs/TESTING.md)** 에 있다.
 
 ## 구조
 

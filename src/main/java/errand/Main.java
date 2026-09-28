@@ -23,10 +23,16 @@ import java.util.random.RandomGenerator;
  * 진입점.
  *
  * <pre>
- *   gradle run                      대화형 플레이
- *   gradle run --args="--validate"  스토리 JSON 검증만 하고 종료 (CI용)
- *   gradle run --args="--auto"      항상 첫 선택지를 골라 끝까지 진행 (스모크 테스트)
- *   gradle run --args="--seed=42"   강화 난수를 고정해 재현 가능하게
+ *   ./gradlew run                        대화형 플레이
+ *   ./gradlew validateStory              스토리 JSON 검증만
+ *   ./gradlew smoke                      자동으로 끝까지 진행 (막히는 곳 확인)
+ *
+ *   --validate                           스토리 검증만 하고 종료
+ *   --auto                               항상 첫 선택지를 골라 끝까지 진행
+ *   --seed=42                            난수 고정 (강화·회피·선공 재현)
+ *
+ *   테스트용 초기 상태 지정 — 뒤쪽 분기를 바로 확인할 때:
+ *   --karma=80 --soul=400 --weapon=4 --hp=60 --charm=2
  * </pre>
  */
 public final class Main {
@@ -56,6 +62,7 @@ public final class Main {
 
         boolean auto = opts.contains("--auto");
         GameState state = new GameState();
+        applyStateOverrides(opts, state, out);
         StoryEngine engine = new StoryEngine(repo, state);
         RandomGenerator rng = rngFrom(opts);
         Enhancer enhancer = new Enhancer(rng);
@@ -92,7 +99,12 @@ public final class Main {
                 if (engine.isAutoAdvance()) {
                     if (!auto) {
                         out.line("  (엔터)");
-                        in.readLine();
+                        // EOF면 입력이 끊긴 것이다. 그대로 진행하면 남은 프롬프트를
+                        // 전부 지나쳐 엔딩까지 쏟아지므로 여기서 멈춘다.
+                        if (in.readLine() == null) {
+                            out.error("입력이 끊겼습니다. 대화형으로 플레이하려면 ./gradlew run 을 쓰세요.");
+                            return;
+                        }
                     }
                     engine.advance();
                     continue;
@@ -118,6 +130,34 @@ public final class Main {
                 engine.choose(picked);
             }
         }
+    }
+
+    /**
+     * 테스트용 초기 상태 지정.
+     *
+     * <p>{@code --weapon=4 --soul=400} 같은 인자로 뒤쪽 분기를 바로 확인할 수 있다.
+     * 예를 들어 2장 수문장 난이도를 보려면 강화 단계를 바꿔 가며 돌리면 된다.
+     * 값을 지정하면 어떤 상태로 시작하는지 화면에 찍어 준다 — 조작된 상태로
+     * 플레이한 것을 나중에 진짜 밸런스와 착각하지 않도록.
+     */
+    private static void applyStateOverrides(List<String> opts, GameState s, ConsoleRenderer out) {
+        boolean changed = false;
+        changed |= intOpt(opts, "--karma=").map(v -> { s.addKarma(v - s.karma()); return true; }).orElse(false);
+        changed |= intOpt(opts, "--soul=").map(v -> { s.addSoul(v - s.soul()); return true; }).orElse(false);
+        changed |= intOpt(opts, "--hp=").map(v -> { s.addHp(v - s.hp()); return true; }).orElse(false);
+        changed |= intOpt(opts, "--weapon=").map(v -> { s.addWeapon(v - s.weapon()); return true; }).orElse(false);
+        changed |= intOpt(opts, "--charm=").map(v -> { s.addCharms(v - s.charms()); return true; }).orElse(false);
+
+        if (changed) {
+            out.line("  [테스트 모드] 초기 상태를 지정했습니다 — " + s);
+        }
+    }
+
+    private static Optional<Integer> intOpt(List<String> opts, String prefix) {
+        return opts.stream()
+                .filter(o -> o.startsWith(prefix))
+                .map(o -> Integer.parseInt(o.substring(prefix.length())))
+                .findFirst();
     }
 
     /** {@code --seed=123}이 있으면 그 시드로, 없으면 매번 다른 난수로. */
