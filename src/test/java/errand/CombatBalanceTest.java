@@ -108,6 +108,81 @@ class CombatBalanceTest {
                 "이 루트로 이기려면 혼을 3번 이상 태워야 하고, 그러면 3장에서 폭력 지옥이 열린다");
     }
 
+    /**
+     * 혼 태우기가 체력 보존 수단으로서 숨돌이보다 비싼지 본다.
+     *
+     * <p>플레이테스트에서 혼 태우기를 기본 공격처럼 쓰는 모습이 나왔다. 그래서
+     * 실제 단가를 재 둔다 — 혼 태우기가 숨돌이보다 <b>싸면</b> 상점의 체력 항목이
+     * 죽고, 태우는 것이 항상 정답이 된다.
+     *
+     * <p>혼 태우기의 값어치는 체력 효율이 아니라 <b>턴 단축</b>이어야 한다.
+     * 수문장의 3번째 공격마다 오는 강공격(28)을 건너뛰는 용도다.
+     */
+    @Test void 혼_태우기는_체력_보존_수단으로는_숨돌이보다_비싸다() {
+        Enemy japgwi = Bestiary.require(Bestiary.JAPGWI);
+
+        GameState striker = atWeapon(1);
+        Fight byStriking = fight(japgwi, striker, PESSIMISTIC);
+
+        GameState burner = atWeapon(1);
+        burner.addSoul(200);
+        int soulBefore = burner.soul();
+        Battle b = new Battle(japgwi, burner, PESSIMISTIC);
+        while (!b.finished()) b.take(CombatAction.BURN_SOUL);
+
+        int hpSaved = byStriking.damageTaken() - (100 - burner.hp());
+        int soulSpent = soulBefore - burner.soul();
+        int burns = burner.counter(Battle.BURN_COUNTER);
+
+        System.out.println("── 혼 태우기 단가 (1장 잡귀 · 낫 +1) ──");
+        System.out.printf("   계속 벤다   %d턴, 피해 %d%n", byStriking.turns(), byStriking.damageTaken());
+        System.out.printf("   계속 태운다 %d턴, 피해 %d  (%d회 태움)%n",
+                b.round(), 100 - burner.hp(), burns);
+        System.out.printf("   차익: 체력 %d 절약에 혼력 %d + 공덕 %d%n",
+                hpSaved, soulSpent, burns * Battle.BURN_SOUL_KARMA);
+        System.out.printf("   비교: 숨돌이는 혼력 %d에 체력 %d%n",
+                errand.economy.Shop.SUMDOLI_COST, errand.economy.Shop.SUMDOLI_HP);
+
+        double burnPerHp = (double) soulSpent / hpSaved;
+        double shopPerHp = (double) errand.economy.Shop.SUMDOLI_COST / errand.economy.Shop.SUMDOLI_HP;
+        System.out.printf("   체력당 혼력: 태우기 %.2f  vs  숨돌이 %.2f%n", burnPerHp, shopPerHp);
+
+        assertTrue(burnPerHp > shopPerHp,
+                ("혼 태우기가 숨돌이보다 체력당 싸면(%.2f vs %.2f) 상점의 체력 항목이 죽고 "
+                        + "태우는 것이 항상 정답이 됩니다.").formatted(burnPerHp, shopPerHp));
+    }
+
+    /**
+     * 공덕이 0이면 혼 태우기의 도덕적 대가가 사라진다.
+     *
+     * <p>공덕은 0~100으로 잘리므로 바닥에 닿은 플레이어는 공짜로 태울 수 있다.
+     * 이미 엔딩 C 확정 구간이라 실전 영향은 작지만, 규칙으로 못 박아 둔다 —
+     * 나중에 하한을 음수로 바꾸거나 다른 대가를 붙일 때 이 테스트가 신호가 된다.
+     */
+    @Test void 공덕이_남아_있으면_태울_때마다_깎인다() {
+        GameState s = atWeapon(1);
+        s.addKarma(50);                                      // 공덕 50으로 복구
+        s.addSoul(200);
+        Battle b = new Battle(Bestiary.require(Bestiary.JAPGWI), s, PESSIMISTIC);
+        b.take(CombatAction.BURN_SOUL);
+
+        assertEquals(50 - Battle.BURN_SOUL_KARMA, s.karma());
+        assertEquals(1, s.counter(Battle.BURN_COUNTER));
+    }
+
+    @Test void 공덕_바닥에서는_태워도_더_깎이지_않는다() {
+        GameState s = atWeapon(1);                           // 공덕 0
+        s.addSoul(200);
+        assertEquals(0, s.karma());
+
+        Battle b = new Battle(Bestiary.require(Bestiary.JAPGWI), s, PESSIMISTIC);
+        b.take(CombatAction.BURN_SOUL);
+
+        assertEquals(0, s.karma(), "하한에 닿으면 더 깎이지 않는다 (의도된 클램프)");
+        assertEquals(1, s.counter(Battle.BURN_COUNTER),
+                "공덕이 안 깎여도 태운 횟수는 기록돼야 한다 — 폭력 지옥 판정은 카운터로 한다");
+    }
+
     @Test void 첫_전투는_어떤_강화_단계에서도_넘길_수_있다() {
         for (int w = 0; w <= 5; w++) {
             Fight f = fight(Bestiary.require(Bestiary.JAPGWI), atWeapon(w), PESSIMISTIC);

@@ -37,38 +37,33 @@ sdk install java 21.0.5-tem
 ## 플레이
 
 ```bash
-./play.sh
+./gradlew run
 ```
 
-Windows에서는 `play.bat`.
+`gradle.properties`에 `org.gradle.console=plain`을 박아 뒀으므로 진행 표시줄은 나오지 않는다. 위에 `> Task :run` 같은 줄 몇 개만 찍히고 그 뒤로는 게임 출력만 남는다.
 
-### `./gradlew run`을 쓰지 않는 이유
+> 이 설정이 없으면 Gradle의 진행 표시줄(`<====----> 75% EXECUTING`)이 게임 출력과 같은 줄을 다투면서 계속 덮어쓴다. 심하면 글자를 먹는다 — `형태를 얻은 모양이다.E` 처럼 `EXECUTING`의 첫 글자가 문장 끝에 박히는 식이다.
 
-돌아가긴 하지만 Gradle의 진행 표시줄이 게임 출력 위에 계속 덮어쓴다.
+### 완전히 깨끗한 화면을 원하면
 
+```bash
+./play.sh          # Windows: play.bat
 ```
-  (엔터)
-<=========----> 75% EXECUTING [28s]
-```
 
-심하면 글자를 먹는다 — `형태를 얻은 모양이다.E` 처럼 `EXECUTING`의 첫 글자가 문장 끝에 박히는 식이다.
-
-`play.sh`는 먼저 조용히 빌드한 뒤 만들어진 실행 파일을 직접 띄우므로 화면에 게임 출력만 남는다. 내부적으로는 이렇게 한다.
+`> Task` 줄까지 없애고 게임만 띄운다. 조용히 빌드한 뒤 만들어진 실행 파일을 직접 실행하는 방식이다.
 
 ```bash
 ./gradlew --quiet --console=plain installDist
 build/install/errand-runner/bin/errand-runner
 ```
 
-`./gradlew run`을 꼭 쓰겠다면 `--console=plain`을 붙이면 진행 표시줄은 사라진다. 다만 `> Task :run` 같은 줄은 여전히 나온다.
-
 ### Windows에서 한글이 깨지면
 
-`play.bat`은 `chcp 65001`을 자동으로 실행하므로 그냥 된다. 직접 돌릴 때는 한 번 바꿔 주면 된다.
+`play.bat`은 `chcp 65001`을 자동으로 실행하므로 그냥 된다. `gradlew.bat run`을 쓸 때는 한 번 바꿔 주면 된다.
 
 ```cmd
 chcp 65001
-gradlew.bat run --console=plain
+gradlew.bat run
 ```
 
 Windows Terminal이나 PowerShell 7 이상에서는 그냥 된다.
