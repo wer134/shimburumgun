@@ -8,27 +8,67 @@
 java -version    # 21 이상이면 됨
 ```
 
-Java가 없으면 [Temurin 21](https://adoptium.net/temurin/releases/?version=21)을 받으면 된다.
+### Java가 없다면
+
+**WSL / Ubuntu / Debian**
+
+```bash
+sudo apt update
+sudo apt install -y openjdk-21-jdk
+```
+
+`JAVA_HOME`은 따로 설정하지 않아도 된다. apt가 `/usr/bin/java`에 링크를 걸고 `gradlew`가 PATH에서 찾는다.
+
+apt에 21이 없다면(Ubuntu 22.04 미만) SDKMAN이 간단하다.
+
+```bash
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install java 21.0.5-tem
+```
+
+**macOS**: `brew install openjdk@21`
+**Windows**: [Temurin 21](https://adoptium.net/temurin/releases/?version=21)
+
+> **WSL에서 Windows에 깔린 Java를 끌어다 쓰지 말 것.** Windows용 실행 파일이라 경로 형식(`C:\` vs `/mnt/c/`)이 충돌해 Gradle이 깨진다. WSL 안에 Linux용 Java를 따로 깔아야 한다.
 
 ---
 
 ## 플레이
 
 ```bash
-./gradlew run
+./play.sh
 ```
 
-Windows에서는 `gradlew.bat run`.
+Windows에서는 `play.bat`.
 
-> **`gradle run`이 아니라 `./gradlew run`을 쓸 것.** 시스템에 설치된 Gradle로 돌리면 버전이 달라 빌드가 깨질 수 있다.
+### `./gradlew run`을 쓰지 않는 이유
+
+돌아가긴 하지만 Gradle의 진행 표시줄이 게임 출력 위에 계속 덮어쓴다.
+
+```
+  (엔터)
+<=========----> 75% EXECUTING [28s]
+```
+
+심하면 글자를 먹는다 — `형태를 얻은 모양이다.E` 처럼 `EXECUTING`의 첫 글자가 문장 끝에 박히는 식이다.
+
+`play.sh`는 먼저 조용히 빌드한 뒤 만들어진 실행 파일을 직접 띄우므로 화면에 게임 출력만 남는다. 내부적으로는 이렇게 한다.
+
+```bash
+./gradlew --quiet --console=plain installDist
+build/install/errand-runner/bin/errand-runner
+```
+
+`./gradlew run`을 꼭 쓰겠다면 `--console=plain`을 붙이면 진행 표시줄은 사라진다. 다만 `> Task :run` 같은 줄은 여전히 나온다.
 
 ### Windows에서 한글이 깨지면
 
-출력 스트림은 코드에서 UTF-8로 고정해 뒀지만, 구형 `cmd.exe`는 콘솔 코드페이지가 949로 잡혀 있을 수 있다. 실행 전에 한 번 바꿔 주면 된다.
+`play.bat`은 `chcp 65001`을 자동으로 실행하므로 그냥 된다. 직접 돌릴 때는 한 번 바꿔 주면 된다.
 
 ```cmd
 chcp 65001
-gradlew.bat run
+gradlew.bat run --console=plain
 ```
 
 Windows Terminal이나 PowerShell 7 이상에서는 그냥 된다.
@@ -86,7 +126,7 @@ Windows Terminal이나 PowerShell 7 이상에서는 그냥 된다.
 초기 상태를 지정해 뒤쪽을 바로 확인할 수 있다.
 
 ```bash
-./gradlew run --args="--weapon=4 --soul=300 --karma=80"
+./play.sh --weapon=4 --soul=300 --karma=80
 ```
 
 | 인자 | 뜻 |
@@ -103,7 +143,7 @@ Windows Terminal이나 PowerShell 7 이상에서는 그냥 된다.
 **강화 확률을 체감하고 싶으면** 혼력을 넉넉히 주고 상점에서 계속 갈아 보라.
 
 ```bash
-./gradlew run --args="--soul=500"
+./play.sh --soul=500
 ```
 
 ---

@@ -43,6 +43,11 @@ public final class ShopConsole {
                 if (!o.available()) out.printf("     └ %s%n", o.blockedReason());
             }
             out.printf("  %d) 떠난다%n", offers.size() + 1);
+
+            // 전부 막혔으면 말해 준다. 없으면 플레이어가 막힌 항목을 계속 눌러 보게 된다.
+            if (offers.stream().noneMatch(Shop.Offer::available)) {
+                out.println("  도깨비가 봇짐을 툭툭 친다. \"지금은 내줄 게 없소. 혼력을 더 모아 오시오.\"");
+            }
             out.print("> ");
             out.flush();
 

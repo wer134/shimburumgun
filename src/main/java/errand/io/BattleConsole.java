@@ -74,7 +74,7 @@ public final class BattleConsole {
 
         out.println();
         out.println(battle.outcome() == Battle.Outcome.VICTORY
-                ? "  " + enemy.name() + "이 흩어진다."
+                ? "  " + Korean.subject(enemy.name()) + " 흩어진다."
                 : "  눈앞이 흐려진다. 서 있을 수가 없다.");
         return battle.outcome();
     }
@@ -95,9 +95,9 @@ public final class BattleConsole {
         if (log.evaded()) {
             out.println("  " + enemy.name() + "의 손이 허공을 스친다.");
         } else if (log.enemyHeavy()) {
-            out.printf("  %s가 크게 내리친다. %d 피해%n", enemy.name(), log.damageTaken());
+            out.printf("  %s 크게 내리친다. %d 피해%n", Korean.subject(enemy.name()), log.damageTaken());
         } else {
-            out.printf("  %s가 덮쳐 온다. %d 피해%n", enemy.name(), log.damageTaken());
+            out.printf("  %s 덮쳐 온다. %d 피해%n", Korean.subject(enemy.name()), log.damageTaken());
         }
     }
 

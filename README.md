@@ -43,19 +43,22 @@
 **Java 21 이상만 있으면 된다.** Gradle은 설치할 필요 없다 — wrapper가 들어 있다.
 
 ```bash
-./gradlew run              # 플레이
-./gradlew validateStory    # 스토리 JSON만 검증 (2초)
-./gradlew smoke            # 자동으로 끝까지 진행, 막히는 곳 확인
-./gradlew test             # 단위 테스트 60개
-./gradlew check            # 위 셋 전부
+./play.sh                  # 플레이 (Windows: play.bat)
 ```
 
-Windows는 `gradlew.bat run`.
+`./gradlew run`도 되지만 Gradle 진행 표시줄이 게임 출력을 덮어쓴다. `play.sh`는 조용히 빌드한 뒤 실행 파일을 직접 띄운다.
+
+```bash
+./gradlew validateStory    # 스토리 JSON만 검증 (2초)
+./gradlew smoke            # 자동으로 끝까지 진행, 막히는 곳 확인
+./gradlew test             # 단위 테스트 65개
+./gradlew check            # 위 셋 전부
+```
 
 특정 장면만 보려면 초기 상태를 지정할 수 있다.
 
 ```bash
-./gradlew run --args="--weapon=4 --soul=300 --karma=80 --seed=42"
+./play.sh --weapon=4 --soul=300 --karma=80 --seed=42
 ```
 
 자세한 테스트 방법과 봐 줄 지점은 **[docs/TESTING.md](docs/TESTING.md)** 에 있다.
