@@ -149,6 +149,44 @@ gradle run --args="--validate"
 
 ---
 
+## 전투
+
+`scene`을 `battle`로 두고 `battle` 블록을 적는다. **승패에 따라 갈 곳을 스토리가 정한다** — 엔진은 패배를 게임오버로 처리하지 않는다.
+
+```json
+{
+  "id": "ch1_06_battle",
+  "scene": "battle",
+  "text": ["돌아 나오는 길목에 잡귀가 서 있다."],
+  "battle": {
+    "enemy": "잡귀",
+    "onVictory": "ch1_07_won",
+    "onDefeat": "ch1_07_scattered"
+  }
+}
+```
+
+- `enemy`는 `errand.combat.Bestiary`에 있는 id여야 한다 (현재 `잡귀`, `수문장`). 없는 이름이면 로딩 실패
+- `onVictory` / `onDefeat` 둘 다 필수. 없는 대상을 가리키면 로딩 실패
+- 전투 스토리렛에는 `next`를 쓸 수 없다 — 분기가 이미 둘이다
+- 전투 보상(혼력 등)은 승리 스토리렛의 `onEnter`에 적는다
+
+```json
+{ "id": "ch1_07_won", "onEnter": [ { "soul": 30 } ], "text": ["..."], "next": "..." }
+```
+
+패배 쪽도 마찬가지로 `onEnter`에 대가를 적는다. 1장에서는 강림이 건져 올리는 대신 공덕을 가져간다.
+
+```json
+{ "id": "ch1_07_scattered", "onEnter": [ { "karma": -10 }, { "hp": 30 } ], "text": ["..."] }
+```
+
+### 장 시작 회복
+
+"장 시작 시 체력 +30"(GDD 3장)은 엔진에 하드코딩돼 있지 않다. 각 장 첫 스토리렛의 `onEnter`에 `{ "hp": 30 }`을 적으면 된다.
+
+---
+
 ## 검증기가 잡아주는 것
 
 `gradle run --args="--validate"`는 오류를 **한꺼번에** 보고한다. 하나 고치고 다시 돌리는 일을 반복하지 않아도 된다.
@@ -158,6 +196,8 @@ gradle run --args="--validate"
 - `flags.json`에 없는 플래그·카운터 이름 (오타 방지)
 - 어디서도 닿을 수 없는 스토리렛
 - `choices`와 `next` 동시 사용
+- 도감에 없는 `battle.enemy`, 끊어진 `onVictory`/`onDefeat`
+- `scene: "battle"`인데 `battle` 블록이 없거나, 반대로 블록만 있고 scene이 다름
 - 조건·효과의 문법 오류 (어느 파일 어느 스토리렛 몇 번째 선택지인지 짚어준다)
 
 잡지 못하는 것도 있다. **모든 선택지가 조건부인 스토리렛**은 런타임에 걸린다 — 상태에 따라 선택지가 하나도 안 보일 수 있기 때문이다. 조건 없는 선택지를 하나는 남겨 둘 것.

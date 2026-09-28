@@ -1,0 +1,8 @@
+{
+  "_comment": "scene은 battle인데 battle 블록이 없다.",
+
+  "storylets": [
+    { "id": "a", "scene": "battle", "text": "블록 없는 전투", "next": "b" },
+    { "id": "b", "text": "끝", "ending": "TEST" }
+  ]
+}

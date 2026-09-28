@@ -23,10 +23,6 @@ public final class ConsoleRenderer {
             out.println("  " + line);
             out.println();
         }
-        if (Storylet.SCENE_BATTLE.equals(s.scene())) {
-            out.println("  (전투 장면 — 전투 시스템 미구현. 지금은 통과합니다.)");
-            out.println();
-        }
     }
 
     public void choices(List<Choice> choices) {

@@ -21,6 +21,7 @@ import java.util.List;
  * @param choices  선택지. 비어 있으면 next로 자동 진행한다
  * @param next     선택지가 없을 때 이동할 대상. null이면 엔진이 고른다
  * @param ending   엔딩 스토리렛이면 엔딩 코드("A"/"B"/"C"/"HIDDEN"). 아니면 null
+ * @param battle   scene이 battle일 때의 적과 승패 분기. 그 외에는 null
  */
 public record Storylet(
         String id,
@@ -34,13 +35,18 @@ public record Storylet(
         List<Effect> onEnter,
         List<Choice> choices,
         String next,
-        String ending
+        String ending,
+        BattleSpec battle
 ) {
     public static final String SCENE_NARRATIVE = "narrative";
     public static final String SCENE_BATTLE    = "battle";
     public static final String SCENE_SHOP      = "shop";
 
     public boolean isEnding()   { return ending != null; }
+
+    public boolean isBattle()   { return SCENE_BATTLE.equals(scene); }
+
+    public boolean isShop()     { return SCENE_SHOP.equals(scene); }
 
     public boolean isTerminal() { return isEnding() || (choices.isEmpty() && next == null); }
 

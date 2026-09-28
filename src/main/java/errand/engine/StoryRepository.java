@@ -32,9 +32,18 @@ public final class StoryRepository {
         this.declaredCounters = counters;
     }
 
-    public static StoryRepository loadDefault() { return load(BASE + "index.json"); }
+    /**
+     * 기본 스토리를 읽는다.
+     *
+     * @param knownEnemies 도감에 있는 적 id 목록. 전투 스토리렛의 enemy를 검증하는 데
+     *                     쓴다. 적 정의는 {@code errand.combat}에 있으므로 engine이
+     *                     거기에 의존하지 않도록 밖에서 넣어 준다
+     */
+    public static StoryRepository loadDefault(Set<String> knownEnemies) {
+        return load(BASE + "index.json", knownEnemies);
+    }
 
-    public static StoryRepository load(String indexResource) {
+    public static StoryRepository load(String indexResource, Set<String> knownEnemies) {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode index = read(mapper, indexResource);
         // 나머지 파일은 index.json과 같은 디렉터리에서 찾는다. 테스트가 별도
@@ -67,7 +76,7 @@ public final class StoryRepository {
             }
         }
 
-        errors.addAll(validate(byId, start, flags, counters));
+        errors.addAll(validate(byId, start, flags, counters, knownEnemies));
         if (!errors.isEmpty()) {
             throw new StoryLoadException("스토리 검증 실패 (%d건)%n  - %s"
                     .formatted(errors.size(), String.join("%n  - ".formatted(), errors)));
@@ -78,7 +87,8 @@ public final class StoryRepository {
     // ---------- 검증 ----------
 
     private static List<String> validate(Map<String, Storylet> byId, String start,
-                                         Set<String> flags, Set<String> counters) {
+                                         Set<String> flags, Set<String> counters,
+                                         Set<String> knownEnemies) {
         List<String> errors = new ArrayList<>();
 
         if (!byId.containsKey(start)) {
@@ -93,6 +103,21 @@ public final class StoryRepository {
                 if (c.target() != null && !byId.containsKey(c.target())) {
                     errors.add("'%s > %s'의 goto가 없는 대상을 가리킵니다: '%s'"
                             .formatted(s.id(), c.id(), c.target()));
+                }
+            }
+            if (s.battle() != null) {
+                BattleSpec b = s.battle();
+                if (!knownEnemies.isEmpty() && !knownEnemies.contains(b.enemyId())) {
+                    errors.add("'%s'가 도감에 없는 적을 가리킵니다: '%s' (가능: %s)"
+                            .formatted(s.id(), b.enemyId(), String.join(", ", knownEnemies)));
+                }
+                if (!byId.containsKey(b.onVictory())) {
+                    errors.add("'%s'의 battle.onVictory가 없는 대상을 가리킵니다: '%s'"
+                            .formatted(s.id(), b.onVictory()));
+                }
+                if (!byId.containsKey(b.onDefeat())) {
+                    errors.add("'%s'의 battle.onDefeat가 없는 대상을 가리킵니다: '%s'"
+                            .formatted(s.id(), b.onDefeat()));
                 }
             }
             checkNames(s, flags, counters, errors);
@@ -171,7 +196,10 @@ public final class StoryRepository {
             List<String> targets = new ArrayList<>();
             boolean hasOpenExit = false;
 
-            if (s.choices().isEmpty()) {
+            if (s.battle() != null) {
+                targets.add(s.battle().onVictory());
+                targets.add(s.battle().onDefeat());
+            } else if (s.choices().isEmpty()) {
                 if (s.next() != null) targets.add(s.next());
                 else hasOpenExit = true;                     // 조건 선택으로 자동 진행
             } else {

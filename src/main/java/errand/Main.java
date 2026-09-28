@@ -1,8 +1,11 @@
 package errand;
 
+import errand.combat.Battle;
+import errand.combat.Bestiary;
 import errand.economy.Enhancer;
 import errand.economy.Shop;
 import errand.engine.*;
+import errand.io.BattleConsole;
 import errand.io.ConsoleRenderer;
 import errand.io.ShopConsole;
 
@@ -38,7 +41,7 @@ public final class Main {
 
         StoryRepository repo;
         try {
-            repo = StoryRepository.loadDefault();
+            repo = StoryRepository.loadDefault(Bestiary.all().keySet());
         } catch (StoryLoadException e) {
             out.error(e.getMessage());
             System.exit(1);
@@ -54,19 +57,32 @@ public final class Main {
         boolean auto = opts.contains("--auto");
         GameState state = new GameState();
         StoryEngine engine = new StoryEngine(repo, state);
-        Enhancer enhancer = new Enhancer(rngFrom(opts));
+        RandomGenerator rng = rngFrom(opts);
+        Enhancer enhancer = new Enhancer(rng);
 
         try (BufferedReader in = new BufferedReader(
                 new InputStreamReader(System.in, StandardCharsets.UTF_8))) {
 
             ShopConsole shopConsole = new ShopConsole(stdout, in, auto);
+            BattleConsole battleConsole = new BattleConsole(stdout, in, auto, rng);
 
             while (true) {
-                out.storylet(engine.current());
+                Storylet cur = engine.current();
+                out.storylet(cur);
 
-                if (Storylet.SCENE_SHOP.equals(engine.current().scene())) {
+                if (cur.isShop()) {
                     // 막간마다 새 Shop을 만든다 — 천도 횟수 제한이 인스턴스에 묶여 있다.
                     shopConsole.run(new Shop(enhancer), state);
+                }
+
+                if (cur.isBattle()) {
+                    BattleSpec spec = cur.battle();
+                    Battle.Outcome result =
+                            battleConsole.run(Bestiary.require(spec.enemyId()), state);
+                    engine.resumeAt(result == Battle.Outcome.VICTORY
+                            ? spec.onVictory()
+                            : spec.onDefeat());
+                    continue;
                 }
 
                 if (engine.isFinished()) {

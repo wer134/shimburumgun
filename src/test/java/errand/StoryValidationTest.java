@@ -1,5 +1,6 @@
 package errand;
 
+import errand.combat.Bestiary;
 import errand.engine.StoryLoadException;
 import errand.engine.StoryRepository;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class StoryValidationTest {
 
     @Test void 실제_스토리는_검증을_통과한다() {
-        StoryRepository repo = StoryRepository.loadDefault();
+        StoryRepository repo = StoryRepository.loadDefault(Bestiary.all().keySet());
         assertTrue(repo.size() >= 10, "스토리렛이 너무 적습니다: " + repo.size());
         assertNotNull(repo.start());
         assertTrue(repo.declaredFlags().contains("원혼_이름을_물음"));
@@ -24,7 +25,7 @@ class StoryValidationTest {
 
     @Test void 고장난_스토리는_모든_오류를_한꺼번에_보고한다() {
         StoryLoadException e = assertThrows(StoryLoadException.class,
-                () -> StoryRepository.load("/broken/index.json"));
+                () -> StoryRepository.load("/broken/index.json", Bestiary.all().keySet()));
         String msg = e.getMessage();
 
         assertAll(
@@ -37,7 +38,25 @@ class StoryValidationTest {
 
     @Test void 없는_시작점은_거부한다() {
         StoryLoadException e = assertThrows(StoryLoadException.class,
-                () -> StoryRepository.load("/broken/bad-start.json"));
+                () -> StoryRepository.load("/broken/bad-start.json", Bestiary.all().keySet()));
         assertTrue(e.getMessage().contains("없습니다"), e.getMessage());
+    }
+
+    @Test void 전투_스토리렛의_잘못된_참조를_잡는다() {
+        StoryLoadException e = assertThrows(StoryLoadException.class,
+                () -> StoryRepository.load("/broken/battle-index.json", Bestiary.all().keySet()));
+        String msg = e.getMessage();
+
+        assertAll(
+                () -> assertTrue(msg.contains("도감에 없는 적"), "없는 적을 못 잡음:\n" + msg),
+                () -> assertTrue(msg.contains("onVictory"), "끊어진 승리 분기를 못 잡음:\n" + msg),
+                () -> assertTrue(msg.contains("onDefeat"), "끊어진 패배 분기를 못 잡음:\n" + msg)
+        );
+    }
+
+    @Test void scene과_battle_블록이_짝이_맞아야_한다() {
+        StoryLoadException missing = assertThrows(StoryLoadException.class,
+                () -> StoryRepository.load("/broken/battle-noblock.json", Bestiary.all().keySet()));
+        assertTrue(missing.getMessage().contains("battle 블록이 필요합니다"), missing.getMessage());
     }
 }

@@ -38,16 +38,31 @@ public final class StoryEngine {
     public List<Choice> availableChoices() { return current.visibleChoices(state); }
 
     public boolean isAutoAdvance() {
-        return !isFinished() && current.choices().isEmpty();
+        return !isFinished() && current.choices().isEmpty() && !current.isBattle();
     }
 
     /** 선택지 없는 스토리렛에서 다음으로 넘어간다. */
     public void advance() {
         if (isFinished()) throw new IllegalStateException("엔딩에 도달해 더 진행할 수 없습니다.");
+        if (current.isBattle()) {
+            throw new IllegalStateException(
+                    "'%s'는 전투 스토리렛입니다. 전투를 치른 뒤 resumeAt()으로 승패 분기를 지정하세요."
+                            .formatted(current.id()));
+        }
         if (!current.choices().isEmpty()) {
             throw new IllegalStateException("'%s'에는 선택지가 있습니다. choose()를 쓰세요.".formatted(current.id()));
         }
         enter(resolve(current.next()));
+    }
+
+    /**
+     * 씬 처리기(전투 등)가 결과에 따라 갈 곳을 직접 지정한다.
+     *
+     * <p>선택지도 next도 아닌 경로로 이동하는 유일한 통로다. 전투의 승패처럼
+     * 텍스트 밖에서 결정되는 분기에만 쓴다.
+     */
+    public void resumeAt(String storyletId) {
+        enter(repo.require(storyletId));
     }
 
     /** 선택지를 고른다. 효과를 적용한 뒤 다음 스토리렛으로 이동한다. */

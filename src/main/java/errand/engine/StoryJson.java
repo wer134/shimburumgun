@@ -39,10 +39,12 @@ final class StoryJson {
             }
         }
 
+        String scene = n.path("scene").asText(Storylet.SCENE_NARRATIVE);
+
         return new Storylet(
                 id,
                 n.path("chapter").asInt(0),
-                n.path("scene").asText(Storylet.SCENE_NARRATIVE),
+                scene,
                 n.hasNonNull("speaker") ? n.get("speaker").asText() : null,
                 textLines(n, at),
                 condition(n.get("requires"), at + " > requires"),
@@ -51,8 +53,36 @@ final class StoryJson {
                 effects(n.get("onEnter"), at + " > onEnter"),
                 List.copyOf(choices),
                 n.hasNonNull("next") ? n.get("next").asText() : null,
-                n.hasNonNull("ending") ? n.get("ending").asText() : null
+                n.hasNonNull("ending") ? n.get("ending").asText() : null,
+                battle(n, scene, at)
         );
+    }
+
+    /** 전투 스토리렛의 {@code battle} 블록. scene과 짝이 맞는지도 여기서 본다. */
+    private static BattleSpec battle(JsonNode n, String scene, String at) {
+        boolean isBattleScene = Storylet.SCENE_BATTLE.equals(scene);
+        JsonNode b = n.get("battle");
+
+        if (b == null || b.isNull()) {
+            if (isBattleScene) {
+                throw new StoryLoadException(at + ": scene이 \"battle\"이면 battle 블록이 필요합니다. "
+                        + "예: \"battle\": {\"enemy\": \"잡귀\", \"onVictory\": \"...\", \"onDefeat\": \"...\"}");
+            }
+            return null;
+        }
+        if (!isBattleScene) {
+            throw new StoryLoadException(at + ": battle 블록이 있으나 scene이 \"battle\"이 아닙니다 (현재 \""
+                    + scene + "\").");
+        }
+        if (n.hasNonNull("next")) {
+            throw new StoryLoadException(at + ": 전투 스토리렛은 next를 쓰지 않습니다. "
+                    + "승패에 따라 battle.onVictory / battle.onDefeat로 갈립니다.");
+        }
+        String bat = at + " > battle";
+        return new BattleSpec(
+                requireText(b, "enemy", bat),
+                requireText(b, "onVictory", bat),
+                requireText(b, "onDefeat", bat));
     }
 
     private static Choice choice(JsonNode n, String at) {
